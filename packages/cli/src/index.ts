@@ -643,9 +643,20 @@ async function main(): Promise<void> {
    bb-browser site platform/command "test query" --json
 
 5. CONTRIBUTE
-   Clone: git clone https://github.com/epiral/bb-sites
-   Add:   bb-sites/platform/command.js
-   PR:    gh pr create --repo epiral/bb-sites
+   Option A (with gh CLI):
+     git clone https://github.com/epiral/bb-sites && cd bb-sites
+     git checkout -b feat-platform
+     # add adapter files
+     git push -u origin feat-platform
+     gh pr create --repo epiral/bb-sites
+
+   Option B (without gh CLI, using bb-browser itself):
+     bb-browser site github/fork epiral/bb-sites
+     git clone https://github.com/YOUR_USER/bb-sites && cd bb-sites
+     git checkout -b feat-platform
+     # add adapter files
+     git push -u origin feat-platform
+     bb-browser site github/pr-create epiral/bb-sites --title "feat(platform): add adapters" --head "YOUR_USER:feat-platform"
 
 Private adapters:  ~/.bb-browser/sites/<platform>/<command>.js
 Community:         ~/.bb-browser/bb-sites/ (via bb-browser site update)
