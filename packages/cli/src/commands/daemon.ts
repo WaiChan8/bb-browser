@@ -6,16 +6,17 @@
  *   bb-browser stop      停止 Daemon
  */
 
-import { isDaemonRunning, stopDaemon } from "../daemon-manager.js";
+import { spawn } from "node:child_process";
+import { isDaemonRunning, stopDaemon, getDaemonPath } from "../daemon-manager.js";
 
 export interface DaemonOptions {
   json?: boolean;
+  host?: string;
 }
 
 /**
  * 前台启动 Daemon
- * 注意：实际的 Daemon 逻辑在 @bb-browser/daemon 包中
- * 此命令作为入口，启动 daemon 包的主函数
+ * 通过 spawn 启动 daemon.js，stdio 继承到当前终端
  */
 export async function daemonCommand(
   options: DaemonOptions = {}
@@ -30,27 +31,31 @@ export async function daemonCommand(
     return;
   }
 
-  // 动态导入 daemon 包并启动
-  try {
-    const { startDaemon } = await import("@bb-browser/daemon");
-    
-    if (options.json) {
-      console.log(JSON.stringify({ success: true, message: "Daemon 启动中..." }));
-    } else {
-      console.log("Daemon 启动中...");
-    }
-    
-    await startDaemon();
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    
-    if (options.json) {
-      console.log(JSON.stringify({ success: false, error: message }));
-    } else {
-      console.error(`启动失败: ${message}`);
-    }
-    process.exit(1);
+  const daemonPath = getDaemonPath();
+  const args = [daemonPath];
+  if (options.host) {
+    args.push("--host", options.host);
   }
+
+  if (options.json) {
+    console.log(JSON.stringify({ success: true, message: "Daemon 启动中..." }));
+  } else {
+    console.log("Daemon 启动中...");
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn(process.execPath, args, {
+      stdio: "inherit",
+    });
+    child.on("exit", (code) => {
+      if (code && code !== 0) {
+        reject(new Error(`Daemon exited with code ${code}`));
+      } else {
+        resolve();
+      }
+    });
+    child.on("error", reject);
+  });
 }
 
 /**

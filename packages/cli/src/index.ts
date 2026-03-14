@@ -399,7 +399,9 @@ async function main(): Promise<void> {
 
       case "daemon":
       case "start": {
-        await daemonCommand({ json: parsed.flags.json });
+        const hostIdx = process.argv.findIndex(a => a === "--host");
+        const host = hostIdx >= 0 ? process.argv[hostIdx + 1] : undefined;
+        await daemonCommand({ json: parsed.flags.json, host });
         break;
       }
 
